@@ -61,7 +61,7 @@
 </head>
 <body>
     <div class="chart-container">
-        <div class="chart-title">Top 5 Products - Last 12 Weeks</div>
+        <div class="chart-title">Top 5 Products Per Week - Last 12 Weeks</div>
         <div id="loading" class="loading">Loading chart data...</div>
         <div id="error" class="error" style="display: none;"></div>
         <div id="chartWrapper" style="display: none;">
@@ -185,19 +185,19 @@
             const weeks = [...new Set(data.map(d => d.week))].sort();
             const allProducts = [...new Set(data.map(d => d.productName))];
             
-            // Calculate total revenue per product across all weeks
-            const productTotals = {};
-            allProducts.forEach(product => {
-                productTotals[product] = data
-                    .filter(d => d.productName === product)
-                    .reduce((sum, d) => sum + d.revenue, 0);
+            // Calculate top 5 products for each week
+            const weeklyTop5 = {};
+            weeks.forEach(week => {
+                const weekData = data.filter(d => d.week === week);
+                const weekRankings = weekData
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .slice(0, 5)
+                    .map(d => d.productName);
+                weeklyTop5[week] = weekRankings;
             });
             
-            // Get top 5 products
-            const top5Products = Object.entries(productTotals)
-                .sort(([,a], [,b]) => b - a)
-                .slice(0, 5)
-                .map(([product]) => product);
+            // Get all unique products that appear in top 5 for any week
+            const top5Products = [...new Set(Object.values(weeklyTop5).flat())];
             
             // Generate colors for top 5 products
             const colors = [
@@ -259,7 +259,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Top 5 Products Revenue - Last 12 Weeks',
+                            text: 'Top 5 Products Per Week - Last 12 Weeks',
                             font: {
                                 size: 16,
                                 weight: 'bold'
