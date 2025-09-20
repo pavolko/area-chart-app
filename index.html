@@ -189,11 +189,16 @@
             const targetWeek = weeks[0];
             const weekData = data.filter(d => d.week === targetWeek);
             
+            console.log('Target week:', targetWeek);
+            console.log('Week data:', weekData);
+            
             // Get top 5 products for that specific week
             const top5Products = weekData
                 .sort((a, b) => b.revenue - a.revenue)
                 .slice(0, 5)
                 .map(d => d.productName);
+                
+            console.log('Top 5 products:', top5Products);
             
             // Generate colors for top 5 products
             const colors = [
@@ -223,8 +228,6 @@
                     backgroundColor: colors[index],
                     borderColor: borderColors[index],
                     borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
                     stack: 'stack1'
                 };
             });
@@ -236,7 +239,7 @@
             
             // Create new chart
             chart = new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: [targetWeek],
                     datasets: datasets
