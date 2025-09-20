@@ -152,14 +152,15 @@
             const data = [];
             weeks.forEach((week, weekIndex) => {
                 allProducts.forEach((product, productIndex) => {
-                    // Create more realistic varying revenue with trends
-                    const baseRevenue = 20 + (productIndex * 15); // Base revenue varies by product
-                    const weekVariation = Math.sin(weekIndex * 0.2 + productIndex * 0.5) * 50; // Weekly variation per product
-                    const randomVariation = (Math.random() - 0.5) * 60; // Random variation
-                    const trend = weekIndex * 1.5; // Slight upward trend over time
-                    const seasonalEffect = Math.sin(weekIndex * 0.1) * 30; // Seasonal effect
+                    // Create truly competitive revenue where any product can win any week
+                    const baseRevenue = 50 + Math.random() * 100; // Random base between 50-150
+                    const weekVariation = Math.sin(weekIndex * 0.3 + productIndex * 0.8) * 80; // Strong weekly variation
+                    const randomVariation = (Math.random() - 0.5) * 120; // Large random variation
+                    const trend = Math.sin(weekIndex * 0.15 + productIndex * 0.3) * 40; // Product-specific trends
+                    const seasonalEffect = Math.sin(weekIndex * 0.2) * 50; // Seasonal effect
+                    const productCycle = Math.sin(weekIndex * 0.4 + productIndex * 0.6) * 60; // Product lifecycle
                     
-                    const revenue = Math.max(5, baseRevenue + weekVariation + randomVariation + trend + seasonalEffect);
+                    const revenue = Math.max(10, baseRevenue + weekVariation + randomVariation + trend + seasonalEffect + productCycle);
                     
                     data.push({
                         week: week,
