@@ -211,22 +211,25 @@
             const dataDisplay = document.getElementById('dataDisplay');
             const dataContent = document.getElementById('dataContent');
             
-            // Format the data nicely
-            let formattedData = 'Week\t\tProduct\t\t\t\tRevenue\t\tQuantity\n';
-            formattedData += '='.repeat(80) + '\n';
+            // Format the data nicely - showing only TOP 5 per week (same logic as chart)
+            let formattedData = 'Week\t\tRank\tProduct\t\t\t\tRevenue\t\tQuantity\n';
+            formattedData += '='.repeat(85) + '\n';
             
             // Group by week for better readability
             const weeks = [...new Set(currentData.map(d => d.week))].sort();
             weeks.forEach(week => {
                 const weekData = currentData.filter(d => d.week === week);
                 formattedData += `\nWeek: ${week}\n`;
-                formattedData += '-'.repeat(40) + '\n';
+                formattedData += '-'.repeat(45) + '\n';
                 
-                // Sort by revenue for this week
-                weekData.sort((a, b) => b.revenue - a.revenue);
+                // Sort by revenue for this week and take only TOP 5
+                const top5ForWeek = weekData
+                    .sort((a, b) => b.revenue - a.revenue)
+                    .slice(0, 5);
                 
-                weekData.forEach(item => {
-                    formattedData += `${item.week}\t${item.productName.padEnd(25)}\t${item.revenue.toFixed(2)}\t\t${item.quantity}\n`;
+                top5ForWeek.forEach((item, index) => {
+                    const rank = index + 1;
+                    formattedData += `${item.week}\t#${rank}\t${item.productName.padEnd(25)}\t${item.revenue.toFixed(2)}\t\t${item.quantity}\n`;
                 });
             });
             
