@@ -61,7 +61,7 @@
 </head>
 <body>
     <div class="chart-container">
-        <div class="chart-title">Top 5 Products - Last 12 Weeks</div>
+        <div class="chart-title">Top 5 Products - Last 8 Weeks</div>
         <div id="loading" class="loading">Loading chart data...</div>
         <div id="error" class="error" style="display: none;"></div>
         <div id="chartWrapper" style="display: none;">
@@ -131,7 +131,7 @@
             const weeks = [];
             const today = new Date();
             
-            for (let i = 11; i >= 0; i--) {
+            for (let i = 7; i >= 0; i--) {
                 const weekDate = new Date(today);
                 weekDate.setDate(today.getDate() - (i * 7));
                 weeks.push(weekDate.toISOString().split('T')[0]);
@@ -258,7 +258,7 @@
                     plugins: {
                         title: {
                             display: true,
-                            text: 'Top 5 Products Revenue - Last 12 Weeks',
+                            text: 'Top 5 Products Revenue - Last 8 Weeks',
                             font: {
                                 size: 16,
                                 weight: 'bold'
