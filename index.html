@@ -138,12 +138,20 @@
             }
             
             const data = [];
-            weeks.forEach(week => {
-                products.forEach(product => {
+            weeks.forEach((week, weekIndex) => {
+                products.forEach((product, productIndex) => {
+                    // Create more realistic varying revenue with trends
+                    const baseRevenue = 50 + (productIndex * 20); // Base revenue varies by product
+                    const weekVariation = Math.sin(weekIndex * 0.3) * 30; // Weekly variation
+                    const randomVariation = (Math.random() - 0.5) * 40; // Random variation
+                    const trend = weekIndex * 2; // Slight upward trend over time
+                    
+                    const revenue = Math.max(10, baseRevenue + weekVariation + randomVariation + trend);
+                    
                     data.push({
                         week: week,
                         productName: product,
-                        revenue: Math.random() * 100 + 20,
+                        revenue: Math.round(revenue * 100) / 100,
                         quantity: Math.floor(Math.random() * 10) + 1
                     });
                 });
