@@ -127,7 +127,13 @@
 
         // Generate sample data as fallback
         function generateSampleData() {
-            const products = ['GLP-1 Probio Aktiv', 'ŽENA 50+ Komplex', 'Kolagén', 'Kĺby Kosti Chrupavky', 'Ashwagandha'];
+            // Create a larger pool of products so top 5 can change
+            const allProducts = [
+                'GLP-1 Probio Aktiv', 'ŽENA 50+ Komplex', 'Kolagén', 'Kĺby Kosti Chrupavky', 'Ashwagandha',
+                'Omega 3', 'Vitamin D3', 'Magnézium', 'Probiotiká', 'Kurkuma',
+                'Ginkgo Biloba', 'Echinacea', 'Zelený čaj', 'Chlorella', 'Spirulina'
+            ];
+            
             const weeks = [];
             const today = new Date();
             
@@ -139,14 +145,15 @@
             
             const data = [];
             weeks.forEach((week, weekIndex) => {
-                products.forEach((product, productIndex) => {
+                allProducts.forEach((product, productIndex) => {
                     // Create more realistic varying revenue with trends
-                    const baseRevenue = 50 + (productIndex * 20); // Base revenue varies by product
-                    const weekVariation = Math.sin(weekIndex * 0.3) * 30; // Weekly variation
-                    const randomVariation = (Math.random() - 0.5) * 40; // Random variation
-                    const trend = weekIndex * 2; // Slight upward trend over time
+                    const baseRevenue = 20 + (productIndex * 15); // Base revenue varies by product
+                    const weekVariation = Math.sin(weekIndex * 0.2 + productIndex * 0.5) * 50; // Weekly variation per product
+                    const randomVariation = (Math.random() - 0.5) * 60; // Random variation
+                    const trend = weekIndex * 1.5; // Slight upward trend over time
+                    const seasonalEffect = Math.sin(weekIndex * 0.1) * 30; // Seasonal effect
                     
-                    const revenue = Math.max(10, baseRevenue + weekVariation + randomVariation + trend);
+                    const revenue = Math.max(5, baseRevenue + weekVariation + randomVariation + trend + seasonalEffect);
                     
                     data.push({
                         week: week,
