@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area Chart for Looker Studio</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+        
+        .chart-container {
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .chart-title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+        }
+        
+        .error {
+            text-align: center;
+            color: #d32f2f;
+            padding: 40px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 20px;
+        }
+        
+        #chartWrapper {
+            width: 90%;
+            height: 80%;
+            position: relative;
+        }
+        
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <div class="chart-title">Top 5 Products - Last 12 Weeks</div>
+        <div id="loading" class="loading">Loading chart data...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="chartWrapper" style="display: none;">
+            <canvas id="areaChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        let chart = null;
+
+        // Configuration for your deployed Google Apps Script
+        const CONFIG = {
+            scriptUrl: 'https://script.google.com/macros/s/AKfycbyzLKitPaovvqnPn3HsucMfs98HyCS-rAG1Hcqilf1EBHglpksrE-zPzPpnF1uc4Lpm5w/exec',
+            functionName: 'getWeekly12Data'
+        };
+
+        // Fetch data from your deployed Google Apps Script
+        async function fetchRealData() {
+            try {
+                const url = `${CONFIG.scriptUrl}?function=${CONFIG.functionName}`;
+                
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.result || [];
+            } catch (error) {
+                console.error('Error fetching data from Apps Script:', error);
+                // Fallback to sample data if Apps Script fails
+                return generateSampleData();
+            }
+        }
+
+        // Process real data from Apps Script
+        function processRealData(appsScriptResponse) {
+            if (!appsScriptResponse || !appsScriptResponse.success || !appsScriptResponse.data) {
+                console.log('No valid data from Apps Script, using sample data');
+                return generateSampleData();
+            }
+
+            const rawData = appsScriptResponse.data;
+            console.log('Processing data from Apps Script:', rawData.length, 'records');
+
+            const processedData = [];
+            
+            rawData.forEach(row => {
+                if (row.week && row.productName) {
+                    processedData.push({
+                        week: row.week,
+                        productName: row.productName,
+                        productCode: row.productCode || '',
+                        revenue: row.totalPrice || 0,
+                        quantity: row.totalQuantity || 0
+                    });
+                }
+            });
+
+            console.log('Processed data:', processedData.length, 'records');
+            return processedData;
+        }
+
+        // Generate sample data as fallback
+        function generateSampleData() {
+            const products = ['GLP-1 Probio Aktiv', 'ŽENA 50+ Komplex', 'Kolagén', 'Kĺby Kosti Chrupavky', 'Ashwagandha'];
+            const weeks = [];
+            const today = new Date();
+            
+            for (let i = 11; i >= 0; i--) {
+                const weekDate = new Date(today);
+                weekDate.setDate(today.getDate() - (i * 7));
+                weeks.push(weekDate.toISOString().split('T')[0]);
+            }
+            
+            const data = [];
+            weeks.forEach(week => {
+                products.forEach(product => {
+                    data.push({
+                        week: week,
+                        productName: product,
+                        revenue: Math.random() * 100 + 20,
+                        quantity: Math.floor(Math.random() * 10) + 1
+                    });
+                });
+            });
+            
+            return data;
+        }
+
+        // Load and process data
+        async function loadData() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('error').style.display = 'none';
+                
+                const rawData = await fetchRealData();
+                const processedData = processRealData(rawData);
+                
+                if (processedData.length === 0) {
+                    throw new Error('No data available');
+                }
+                
+                createChart(processedData);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('chartWrapper').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = `Error loading chart: ${error.message}`;
+            }
+        }
+
+        // Create the area chart
+        function createChart(data) {
+            const ctx = document.getElementById('areaChart').getContext('2d');
+            
+            // Get unique weeks and products
+            const weeks = [...new Set(data.map(d => d.week))].sort();
+            const allProducts = [...new Set(data.map(d => d.productName))];
+            
+            // Calculate total revenue per product across all weeks
+            const productTotals = {};
+            allProducts.forEach(product => {
+                productTotals[product] = data
+                    .filter(d => d.productName === product)
+                    .reduce((sum, d) => sum + d.revenue, 0);
+            });
+            
+            // Get top 5 products
+            const top5Products = Object.entries(productTotals)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 5)
+                .map(([product]) => product);
+            
+            // Generate colors for top 5 products
+            const colors = [
+                'rgba(54, 162, 235, 0.6)',
+                'rgba(255, 99, 132, 0.6)',
+                'rgba(255, 205, 86, 0.6)',
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(153, 102, 255, 0.6)'
+            ];
+            
+            const borderColors = [
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(255, 205, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+            ];
+            
+            // Prepare datasets for top 5 products
+            const datasets = top5Products.map((product, index) => {
+                const productData = weeks.map(week => {
+                    const weekData = data.find(d => d.week === week && d.productName === product);
+                    return weekData ? weekData.revenue : 0;
+                });
+                
+                return {
+                    label: product,
+                    data: productData,
+                    backgroundColor: colors[index],
+                    borderColor: borderColors[index],
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                };
+            });
+            
+            // Destroy existing chart if it exists
+            if (chart) {
+                chart.destroy();
+            }
+            
+            // Create new chart
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weeks.map(week => {
+                        const date = new Date(week);
+                        return date.toLocaleDateString('sk-SK', { 
+                            month: 'short', 
+                            day: 'numeric' 
+                        });
+                    }),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Top 5 Products Revenue - Last 12 Weeks',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Week'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Revenue (€)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    elements: {
+                        point: {
+                            radius: 4,
+                            hoverRadius: 6
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize the chart when page loads
+        document.addEventListener('DOMContentLoaded', loadData);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (chart) {
+                chart.resize();
+            }
+        });
+    </script>
+</body>
+</html>
