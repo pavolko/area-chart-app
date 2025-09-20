@@ -66,11 +66,17 @@
         <div id="error" class="error" style="display: none;"></div>
         <div id="chartWrapper" style="display: none;">
             <canvas id="areaChart"></canvas>
+            <button id="showDataBtn" onclick="showRawData()" style="margin-top: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Show Raw Data</button>
+        </div>
+        <div id="dataDisplay" style="display: none; margin-top: 20px; max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 5px;">
+            <h3>Generated Data:</h3>
+            <pre id="dataContent"></pre>
         </div>
     </div>
 
     <script>
         let chart = null;
+        let currentData = null; // Store the generated data globally
 
         // Configuration for your deployed Google Apps Script
         const CONFIG = {
@@ -180,6 +186,9 @@
                     throw new Error('No data available');
                 }
                 
+                // Store the data globally so we can display it
+                currentData = processedData;
+                
                 createChart(processedData);
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('chartWrapper').style.display = 'block';
@@ -190,6 +199,39 @@
                 document.getElementById('error').style.display = 'block';
                 document.getElementById('error').textContent = `Error loading chart: ${error.message}`;
             }
+        }
+        
+        // Function to show raw data
+        function showRawData() {
+            if (!currentData) {
+                alert('No data available');
+                return;
+            }
+            
+            const dataDisplay = document.getElementById('dataDisplay');
+            const dataContent = document.getElementById('dataContent');
+            
+            // Format the data nicely
+            let formattedData = 'Week\t\tProduct\t\t\t\tRevenue\t\tQuantity\n';
+            formattedData += '='.repeat(80) + '\n';
+            
+            // Group by week for better readability
+            const weeks = [...new Set(currentData.map(d => d.week))].sort();
+            weeks.forEach(week => {
+                const weekData = currentData.filter(d => d.week === week);
+                formattedData += `\nWeek: ${week}\n`;
+                formattedData += '-'.repeat(40) + '\n';
+                
+                // Sort by revenue for this week
+                weekData.sort((a, b) => b.revenue - a.revenue);
+                
+                weekData.forEach(item => {
+                    formattedData += `${item.week}\t${item.productName.padEnd(25)}\t${item.revenue.toFixed(2)}\t\t${item.quantity}\n`;
+                });
+            });
+            
+            dataContent.textContent = formattedData;
+            dataDisplay.style.display = dataDisplay.style.display === 'none' ? 'block' : 'none';
         }
 
         // Create the area chart
